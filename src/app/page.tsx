@@ -1,103 +1,176 @@
-import Image from "next/image";
+// src/app/page.tsx
+"use client";
 
-export default function Home() {
+import { useEffect, useState } from "react";
+import Header from "../components/Header";
+import StatCard from "../components/StatCard";
+import { Users, UserCheck, HardHat, GraduationCap, Eye } from "lucide-react";
+
+import {
+  CAPACITY_MAX,
+  initialDashboardData,
+  sumTotalInside,
+  type DashboardCategories,
+} from "../data/dashboardData";
+
+type Category = keyof DashboardCategories;
+const CATEGORIES: Category[] = [
+  "karyawanPKC",
+  "phlKontraktor",
+  "praktikan",
+  "visitor",
+];
+
+export default function Dashboard() {
+  const [data, setData] = useState<DashboardCategories>(initialDashboardData);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  const [lastUpdate, setLastUpdate] = useState(new Date());
+  const [lastEntry, setLastEntry] = useState<Date | null>(null);
+  const [lastExit, setLastExit] = useState<Date | null>(null);
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setData((prev) => {
+        const total = sumTotalInside(prev);
+        const bump = Math.random() < 0.6 ? 1 : -1;
+        const next = { ...prev };
+
+        if (bump > 0) {
+          if (total >= CAPACITY_MAX) return prev;
+          const cat = CATEGORIES[Math.floor(Math.random() * CATEGORIES.length)];
+          next[cat] = (next[cat] as number) + 1;
+          setLastEntry(new Date());
+        } else {
+          if (total <= 0) return prev;
+          const nonZero = CATEGORIES.filter((c) => prev[c] > 0);
+          if (!nonZero.length) return prev;
+          const cat = nonZero[Math.floor(Math.random() * nonZero.length)];
+          next[cat] = (next[cat] as number) - 1;
+          setLastExit(new Date());
+        }
+
+        setLastUpdate(new Date());
+        return next;
+      });
+    }, 4000);
+    return () => clearInterval(id);
+  }, []);
+
+  const totalInside = sumTotalInside(data);
+
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <div className="h-screen bg-slate-50 flex flex-col overflow-hidden">
+      <Header lastUpdate={lastUpdate} />
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+      <main className="flex-1 flex flex-col max-w-7xl mx-auto w-full px-6 py-6">
+        {/* Info bar */}
+        <div className="p-4 rounded-2xl bg-white ring-1 ring-slate-200 shadow-sm mb-6 flex-shrink-0">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <span className="flex items-center gap-2 px-3 py-1 rounded-md bg-red-500/10 text-red-600 border border-red-500/30">
+                <span className="relative flex h-2.5 w-2.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500" />
+                </span>
+                <span className="animate-pulse font-semibold tracking-wide">
+                  LIVE
+                </span>
+              </span>
+
+              <span className="text-sm text-slate-700">
+                Last updated:{" "}
+                <span className="font-medium" suppressHydrationWarning>
+                  {mounted ? lastUpdate.toLocaleTimeString("id-ID") : ""}
+                </span>
+              </span>
+
+              {lastEntry && (
+                <span className="text-sm text-slate-700">
+                  Last entry:{" "}
+                  <span className="font-medium" suppressHydrationWarning>
+                    {mounted ? lastEntry.toLocaleTimeString("id-ID") : ""}
+                  </span>
+                </span>
+              )}
+              {lastExit && (
+                <span className="text-sm text-slate-700">
+                  Last exit:{" "}
+                  <span className="font-medium" suppressHydrationWarning>
+                    {mounted ? lastExit.toLocaleTimeString("id-ID") : ""}
+                  </span>
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Grid - menggunakan flex-1 untuk mengisi ruang yang tersisa */}
+        <div className="flex-1 grid grid-cols-12 gap-6 min-h-0">
+          {/* Orang di Dalam Gedung pakai hijau kujang */}
+          <div className="col-span-12 lg:col-span-8">
+            <div
+              className="h-full rounded-2xl shadow-sm flex flex-col justify-center items-center text-center text-white min-h-[200px]"
+              style={{
+                backgroundColor: "#009a44", // <-- hijau kujang
+              }}
+            >
+              <div className="w-16 h-16 rounded-2xl bg-white/20 flex items-center justify-center shadow-md mb-6">
+                <Users className="w-8 h-8 text-white stroke-[1.75]" />
+              </div>
+              <div className="space-y-3">
+                <div className="text-6xl xl:text-7xl 2xl:text-8xl font-black tracking-tight">
+                  {totalInside.toLocaleString()}
+                </div>
+                <p className="text-lg font-semibold">Orang di Dalam Gedung</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Karyawan PKC */}
+          <div className="col-span-12 lg:col-span-4">
+            <StatCard
+              title="Karyawan PKC"
+              value={data.karyawanPKC}
+              icon={UserCheck}
+              color="bg-blue-600"
+              className="h-full flex items-center min-h-[200px]"
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+          </div>
+
+          {/* Bottom row - menggunakan grid yang lebih fleksibel */}
+          <div className="col-span-12 flex-1 grid grid-cols-12 gap-6 min-h-0">
+            <div className="col-span-12 lg:col-span-4">
+              <StatCard
+                title="PHL & Kontraktor"
+                value={data.phlKontraktor}
+                icon={HardHat}
+                color="bg-cyan-700"
+                className="h-full min-h-[150px]"
+              />
+            </div>
+            <div className="col-span-12 lg:col-span-4">
+              <StatCard
+                title="Praktikan"
+                value={data.praktikan}
+                icon={GraduationCap}
+                color="bg-amber-600"
+                className="h-full min-h-[150px]"
+              />
+            </div>
+            <div className="col-span-12 lg:col-span-4">
+              <StatCard
+                title="Visitor"
+                value={data.visitor}
+                icon={Eye}
+                color="bg-yellow-600"
+                className="h-full min-h-[150px]"
+              />
+            </div>
+          </div>
         </div>
       </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
     </div>
   );
 }

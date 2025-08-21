@@ -1,10 +1,17 @@
-// src/app/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
 import Header from "../components/Header";
 import StatCard from "../components/StatCard";
-import { Users, UserCheck, HardHat, GraduationCap, Eye } from "lucide-react";
+
+// Heroicons (solid)
+import {
+  UsersIcon,
+  UserGroupIcon,
+  BriefcaseIcon,
+  AcademicCapIcon,
+  EyeIcon,
+} from "@heroicons/react/24/solid";
 
 import {
   CAPACITY_MAX,
@@ -12,6 +19,27 @@ import {
   sumTotalInside,
   type DashboardCategories,
 } from "../data/dashboardData";
+
+/* ===== tinggi hero responsif terhadap viewport ===== */
+function useHeroHeight() {
+  const [h, setH] = useState(300);
+  useEffect(() => {
+    const calc = () => {
+      const vh = window.innerHeight || 900;
+      // ~32% tinggi layar, min 260, max 420
+      const target = Math.max(260, Math.min(420, Math.floor(vh * 0.32)));
+      setH(target);
+    };
+    calc();
+    window.addEventListener("resize", calc);
+    document.addEventListener("fullscreenchange", calc);
+    return () => {
+      window.removeEventListener("resize", calc);
+      document.removeEventListener("fullscreenchange", calc);
+    };
+  }, []);
+  return h;
+}
 
 type Category = keyof DashboardCategories;
 const CATEGORIES: Category[] = [
@@ -30,6 +58,7 @@ export default function Dashboard() {
   const [lastEntry, setLastEntry] = useState<Date | null>(null);
   const [lastExit, setLastExit] = useState<Date | null>(null);
 
+  // dummy live update
   useEffect(() => {
     const id = setInterval(() => {
       setData((prev) => {
@@ -59,14 +88,16 @@ export default function Dashboard() {
   }, []);
 
   const totalInside = sumTotalInside(data);
+  const heroHeight = useHeroHeight();
 
   return (
-    <div className="h-screen bg-slate-50 flex flex-col overflow-hidden">
+    <div className="min-h-[100dvh] flex flex-col bg-slate-50">
       <Header lastUpdate={lastUpdate} />
 
-      <main className="flex-1 flex flex-col max-w-7xl mx-auto w-full px-6 py-6">
+      {/* flex-1 memastikan konten selalu penuh layar */}
+      <main className="flex-1 max-w-7xl mx-auto w-full px-6 py-6 min-h-0">
         {/* Info bar */}
-        <div className="p-4 rounded-2xl bg-white ring-1 ring-slate-200 shadow-sm mb-6 flex-shrink-0">
+        <div className="p-4 rounded-2xl bg-white ring-1 ring-slate-200 shadow-sm mb-6">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-4">
               <span className="flex items-center gap-2 px-3 py-1 rounded-md bg-red-500/10 text-red-600 border border-red-500/30">
@@ -79,7 +110,7 @@ export default function Dashboard() {
                 </span>
               </span>
 
-              <span className="text-sm text-slate-700">
+              <span className="text-base text-slate-700">
                 Last updated:{" "}
                 <span className="font-medium" suppressHydrationWarning>
                   {mounted ? lastUpdate.toLocaleTimeString("id-ID") : ""}
@@ -87,7 +118,7 @@ export default function Dashboard() {
               </span>
 
               {lastEntry && (
-                <span className="text-sm text-slate-700">
+                <span className="text-base text-slate-700">
                   Last entry:{" "}
                   <span className="font-medium" suppressHydrationWarning>
                     {mounted ? lastEntry.toLocaleTimeString("id-ID") : ""}
@@ -95,7 +126,7 @@ export default function Dashboard() {
                 </span>
               )}
               {lastExit && (
-                <span className="text-sm text-slate-700">
+                <span className="text-base text-slate-700">
                   Last exit:{" "}
                   <span className="font-medium" suppressHydrationWarning>
                     {mounted ? lastExit.toLocaleTimeString("id-ID") : ""}
@@ -106,66 +137,61 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Grid - menggunakan flex-1 untuk mengisi ruang yang tersisa */}
-        <div className="flex-1 grid grid-cols-12 gap-6 min-h-0">
-          {/* Orang di Dalam Gedung pakai hijau kujang */}
+        {/* ===== GRID 2 ROWS: [heroHeight, 1fr] ===== */}
+        <div
+          className="grid grid-cols-12 gap-6 min-h-0"
+          style={{ gridTemplateRows: `${heroHeight}px 1fr` }}
+        >
+          {/* Row 1: hero (8 col) + karyawan (4 col) */}
           <div className="col-span-12 lg:col-span-8">
-            <div
-              className="h-full rounded-2xl shadow-sm flex flex-col justify-center items-center text-center text-white min-h-[200px]"
-              style={{
-                backgroundColor: "#009a44", // <-- hijau kujang
-              }}
-            >
-              <div className="w-16 h-16 rounded-2xl bg-white/20 flex items-center justify-center shadow-md mb-6">
-                <Users className="w-8 h-8 text-white stroke-[1.75]" />
-              </div>
-              <div className="space-y-3">
-                <div className="text-6xl xl:text-7xl 2xl:text-8xl font-black tracking-tight">
-                  {totalInside.toLocaleString()}
-                </div>
-                <p className="text-lg font-semibold">Orang di Dalam Gedung</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Karyawan PKC */}
-          <div className="col-span-12 lg:col-span-4">
             <StatCard
-              title="Karyawan PKC"
-              value={data.karyawanPKC}
-              icon={UserCheck}
-              color="bg-blue-600"
-              className="h-full flex items-center min-h-[200px]"
+              title="INSIDE NPK2"
+              value={totalInside}
+              icon={UsersIcon}
+              bgClass="bg-[#009a44]"
+              className="w-full h-full"
             />
           </div>
 
-          {/* Bottom row - menggunakan grid yang lebih fleksibel */}
-          <div className="col-span-12 flex-1 grid grid-cols-12 gap-6 min-h-0">
+          <div className="col-span-12 lg:col-span-4">
+            <StatCard
+              title="KARYAWAN PKC"
+              value={data.karyawanPKC}
+              icon={UserGroupIcon}
+              bgClass="bg-blue-600"
+              className="w-full h-full"
+            />
+          </div>
+
+          {/* Row 2: 3 kartu bawah mengisi 1fr */}
+          <div className="col-span-12 grid grid-cols-12 gap-6 min-h-0 lg:row-start-2">
             <div className="col-span-12 lg:col-span-4">
               <StatCard
-                title="PHL & Kontraktor"
+                title="PHL & KONTRAKTOR"
                 value={data.phlKontraktor}
-                icon={HardHat}
-                color="bg-cyan-700"
-                className="h-full min-h-[150px]"
+                icon={BriefcaseIcon}
+                bgClass="bg-cyan-700"
+                className="w-full h-full"
               />
             </div>
+
             <div className="col-span-12 lg:col-span-4">
               <StatCard
-                title="Praktikan"
+                title="PRAKTIKAN"
                 value={data.praktikan}
-                icon={GraduationCap}
-                color="bg-amber-600"
-                className="h-full min-h-[150px]"
+                icon={AcademicCapIcon}
+                bgClass="bg-amber-600"
+                className="w-full h-full"
               />
             </div>
+
             <div className="col-span-12 lg:col-span-4">
               <StatCard
-                title="Visitor"
+                title="VISITOR"
                 value={data.visitor}
-                icon={Eye}
-                color="bg-yellow-600"
-                className="h-full min-h-[150px]"
+                icon={EyeIcon}
+                bgClass="bg-yellow-600"
+                className="w-full h-full"
               />
             </div>
           </div>

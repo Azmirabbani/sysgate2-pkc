@@ -1,48 +1,51 @@
 "use client";
 
-import React from "react";
-import clsx from "clsx";
+import * as React from "react";
 
-type IconEl = React.ElementType;
+/** Komponen ikon dari Heroicons / SVG apa pun */
+export type SvgIcon = React.ComponentType<React.SVGProps<SVGSVGElement>>;
 
-interface StatCardProps {
+export interface StatCardProps {
   title: string;
   value: number | string;
-  icon: IconEl;
-  /** Warna solid Tailwind, mis. "bg-blue-600", "bg-emerald-600" */
-  color: string;
+  icon: SvgIcon; // Heroicons OK
+  bgClass: string; // contoh: "bg-blue-600" / "bg-[#009a44]"
   className?: string;
+  heightPx?: number; // opsional: paksa tinggi kartu (px)
 }
 
 export default function StatCard({
   title,
   value,
   icon: Icon,
-  color,
+  bgClass,
   className,
+  heightPx,
 }: StatCardProps) {
   return (
     <div
-      className={clsx(
-        "rounded-2xl p-6 text-white shadow-strong",
-        "transition-transform duration-300 will-change-transform",
-        "hover:scale-[1.015]",
-        color,
-        className
-      )}
+      className={[
+        "rounded-2xl p-6 text-white shadow-strong flex flex-col",
+        bgClass,
+        className ?? "",
+      ].join(" ")}
+      style={heightPx ? { height: heightPx } : undefined}
     >
-      <div className="flex items-center gap-4">
-        <div className="rounded-xl p-3 bg-white/20">
+      {/* Header kiri atas: ikon + judul */}
+      <div className="flex items-center gap-2">
+        <span className="p-2 rounded-lg bg-white/20">
           <Icon className="w-6 h-6 text-white" />
-        </div>
-        <div className="min-w-0">
-          <div className="uppercase text-sm font-semibold tracking-wide/relaxed opacity-95">
-            {title}
-          </div>
-          <div className="mt-2 text-4xl font-black tracking-tight leading-none">
-            {typeof value === "number" ? value.toLocaleString() : value}
-          </div>
-        </div>
+        </span>
+        <span className="uppercase text-base md:text-lg font-semibold tracking-wide opacity-95">
+          {title}
+        </span>
+      </div>
+
+      {/* Angka center & besar */}
+      <div className="flex-1 flex items-center justify-center">
+        <span className="text-6xl md:text-7xl lg:text-8xl font-black tracking-tight leading-none">
+          {typeof value === "number" ? value.toLocaleString() : value}
+        </span>
       </div>
     </div>
   );
